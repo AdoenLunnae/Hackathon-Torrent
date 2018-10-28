@@ -52,4 +52,26 @@ def getmagnet(m):
             send(m, 'The link is not a valid magnet')
 
 
+@bot.message_handler(commands='get')
+def sendfile(m):
+    uid = m.from_user.id
+    with open('pending.json', 'r')as file:
+        pending = json.load(file)
+    if func.existeuser(uid, pending):
+        for item in pending[str(uid)]:
+            x = tc.get_torrent(item)
+            if x.status == 'seeding':
+                name = x.name
+                subprocess.call(['zip', '-r', '{}.zip'.format(name), 'downloads/{}'.format(name)])
+                doc = open('{}.zip'.format(name), 'rb')
+                bot.send_document(uid, doc)
+                bot.send_document(uid, "FILEID")
+                subprocess.call(['rm', '-r', 'downloads/{}'.format(name), '{}.zip'.format(name)])
+                pending[str(uid)].remove(x.id)
+        with open('pending.json', 'w')as file:
+            json.dump(pending, file)
+    else:
+        send(m, 'No tienes archivos pendientes')
+
+
 bot.polling()
